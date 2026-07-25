@@ -1,0 +1,65 @@
+name: Release CLI
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-cli-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    if: ${{ github.event_name == 'workflow_dispatch' || !contains(github.event.head_commit.message, '[skip cli-release]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ github.token }}
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch --tags --force
+
+      - name: Resolve next CLI version
+        id: version
+        shell: bash
+        run: |
+          set -euo pipefail
+          current="$(node -e "const v=require('./cli/version.json').version;if(!/^\d+\.\d+\.\d+$/.test(v)) process.exit(1); process.stdout.write(v)")"
+          IFS=. read -r major minor patch <<<"${current}"
+          version="${current}"
+          tag="v${version}"
+          while git rev-parse -q --verify "refs/tags/${tag}" >/dev/null; do
+            patch="$((patch + 1))"
+            version="${major}.${minor}.${patch}"
+            tag="v${version}"
+          done
+          node -e "const fs=require('fs'); const version=process.argv[1]; const data=JSON.stringify({version, releaseUrl:'https://github.com/egeuysall/zap/releases'}, null, 2)+'\n'; fs.writeFileSync('cli/version.json', data); fs.writeFileSync('public/zap-version.json', data);" "${version}"
+          node scripts/sync-cli-version.mjs
+          bash -n public/install.sh
+          runtime_version="$(bun cli/src/index.ts --version)"
+          [ "${runtime_version}" = "${version}" ] || {
+            echo "runtime version ${runtime_version} does not match release ${version}" >&2
+            exit 1
+          }
+          if ! git diff --quiet -- cli/version.json public/zap-version.json; then
+            git add cli/version.json public/zap-version.json
+            git commit -m "chore(cli): release ${version} [skip cli-release]"
+          fi
+          git tag "${tag}"
+          git push origin HEAD:"${GITHUB_REF_NAME}"
+          git push origin "${tag}"
+          echo "tag=${tag}" >>"${GITHUB_OUTPUT}"
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "${{ steps.version.outputs.tag }}" --repo "${GITHUB_REPOSITORY}" --title "zap ${{ steps.version.outputs.tag }}" --generate-notes
