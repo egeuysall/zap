@@ -71,7 +71,7 @@ const sidebarNav = [
 ];
 const formats: DownloadFormat[] = ["mp4", "mp3"];
 const qualities: DownloadQuality[] = ["best", "1080p", "720p", "480p", "audio"];
-const cliInstallCommand = "curl -fsSL https://zap.egeuysal.com/install.sh | bash";
+const cliInstallCommand = "curl -fsSL https://raw.githubusercontent.com/egeuysall/zap/master/public/install.sh | bash";
 
 type YouTubeResult = {
   id: string;

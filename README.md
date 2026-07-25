@@ -60,7 +60,7 @@ WORKER_QUEUE=redis REDIS_URL=redis://localhost:6379 bun run worker
 ## CLI
 
 ```sh
-curl -fsSL https://zap.egeuysal.com/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/egeuysall/zap/master/public/install.sh | bash
 zap login
 zap download "https://youtube.com/watch?v=..." --format mp4
 zap local "https://youtube.com/watch?v=..."
