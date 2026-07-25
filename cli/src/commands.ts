@@ -1,6 +1,6 @@
 import { stat } from "node:fs/promises";
 import { basename } from "node:path";
-import { getConfigPath, loadConfig, maskConfig, resolveEndpoint, saveConfig, setConfig, unsetConfig } from "./config";
+import { getConfigPath, loadConfig, maskConfig, resolveApiKey, resolveEndpoint, saveConfig, setConfig, unsetConfig } from "./config";
 import { runBrowserLogin } from "./browser-auth";
 import { DOWNLOADS_DIR, saveRemoteFile } from "./download-file";
 import { requestJson, validateContentUrl } from "./http";
@@ -79,7 +79,7 @@ export async function runCommand(command: Command) {
   }
 
   if (command.name === "download-local") {
-    await requestJson({ path: "/api/auth", config });
+    if (!resolveApiKey(config)) throw new CliError("authentication required. Run `zap login` first.", "AUTH_REQUIRED");
     const outputDir = await downloadLocally(validateContentUrl(command.url), command.format, command.quality, !command.json);
     if (command.json) printJson({ outputDir, format: command.format, quality: command.quality });
     else printOk(`download saved to ${outputDir}`);
