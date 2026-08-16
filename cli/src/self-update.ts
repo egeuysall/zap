@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { realpathSync } from "node:fs";
 import { rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -7,7 +8,37 @@ import { CliError } from "./types";
 
 const REPO = process.env.ZAP_GITHUB_REPO ?? "egeuysall/zap";
 
+function isHomebrewManaged() {
+  return [process.argv[1], process.execPath].some((candidate) => {
+    if (!candidate || ["bun", "node", "nodejs"].includes(path.basename(candidate))) return false;
+    try {
+      return realpathSync(candidate).includes(`${path.sep}Cellar${path.sep}`);
+    } catch {
+      return false;
+    }
+  });
+}
+
+function runHomebrewUpgrade() {
+  for (const args of [["update"], ["upgrade", "zap"]]) {
+    const result = spawnSync("brew", args, { stdio: "inherit" });
+    if (result.error || result.status !== 0) {
+      throw new CliError(`Homebrew ${args.join(" ")} failed`, "UPDATE_FAILED", 2);
+    }
+  }
+}
+
 export async function selfUpdate(currentVersion: string, checkOnly = false) {
+  if (!checkOnly && isHomebrewManaged()) {
+    runHomebrewUpgrade();
+    return {
+      status: "updated",
+      latest: currentVersion,
+      releaseUrl: `https://github.com/${REPO}/releases`,
+      managedByHomebrew: true,
+    } as const;
+  }
+
   const release = await fetch(`https://api.github.com/repos/${REPO}/releases/latest`, {
     headers: { accept: "application/vnd.github+json", "user-agent": "zap-cli" },
   });

@@ -113,6 +113,7 @@ export async function runCommand(command: Command) {
   if (command.name === "self-update") {
     const data = await selfUpdate(VERSION, command.checkOnly);
     if (command.json) printJson(data);
+    else if (data.managedByHomebrew) printOk("updated with Homebrew (brew update && brew upgrade zap)");
     else printOk(data.status === "up-to-date" ? `already current (${data.latest})` : `${data.status}: ${data.latest}`);
     return;
   }

@@ -5,7 +5,7 @@ import { readFileSync, writeFileSync } from "node:fs";
 const cliPath = "cli/version.json";
 const publicPath = "public/zap-version.json";
 const manifest = JSON.parse(readFileSync(cliPath, "utf8"));
-const version = String(manifest.version ?? "").trim();
+const version = String(process.argv[2] ?? manifest.version ?? "").trim();
 
 if (!/^\d+\.\d+\.\d+$/.test(version)) throw new Error(`Invalid CLI version: ${version || "<empty>"}`);
 
