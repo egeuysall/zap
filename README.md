@@ -59,6 +59,15 @@ WORKER_QUEUE=redis REDIS_URL=redis://localhost:6379 bun run worker
 
 ## CLI
 
+Homebrew (recommended):
+
+```sh
+brew tap egeuysall/tap
+brew install --formula egeuysall/tap/zap
+```
+
+The source installer remains available for machines without Homebrew:
+
 ```sh
 curl -fsSL https://raw.githubusercontent.com/egeuysall/zap/master/public/install.sh | bash
 zap login
