@@ -20,7 +20,7 @@ function isHomebrewManaged() {
 }
 
 function runHomebrewUpgrade() {
-  for (const args of [["update"], ["upgrade", "zap"]]) {
+  for (const args of [["update"], ["upgrade", "--formula", "zap"]]) {
     const result = spawnSync("brew", args, { stdio: "inherit" });
     if (result.error || result.status !== 0) {
       throw new CliError(`Homebrew ${args.join(" ")} failed`, "UPDATE_FAILED", 2);
